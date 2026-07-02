@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  posterforge:
+    build: .
+    container_name: posterforge
+    restart: unless-stopped
+    ports:
+      - "8090:5000"          # Change 8090 to any free port on your Unraid box
+    environment:
+      - TMDB_API_KEY=PASTE_YOUR_KEY_HERE
+    volumes:
+      - /mnt/user/appdata/posterforge/output:/app/output
+      # Optional: map directly to a Plex/Jellyfin poster folder
+      # - /mnt/user/media/posters:/app/output
