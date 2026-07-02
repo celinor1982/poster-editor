@@ -1,1 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PosterForge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+  <style>
+    /* ── Reset & tokens ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --bg:        #0d0d0f;
+      --surface:   #16161a;
+      --surface2:  #1e1e24;
+      --border:    #2a2a34;
+      --accent:    #e8c14a;
+      --accent-dim:#a8882e;
+      --text:      #e8e8ee;
+      --muted:     #7a7a8c;
+      --danger:    #e85a4a;
+      --success:   #4ae8a0;
+      --radius:    8px;
+      --font-ui:   'Inter', sans-serif;
+      --font-display: 'Bebas Neue', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-ui);
+      font-size: 14px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ──────────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    header h1 {
+      font-family: var(--font-display);
+      font-size: 28px;
+      letter-spacing: 2px;
+      color: var(--accent);
+    }
+    header p {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 1px;
+    }
+
+    /* ── Layout ──────────────────────────────────────────────────── */
+    .app {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      grid-template-rows: 1fr;
+      flex: 1;
+      overflow: hidden;
+      height: calc(100vh - 61px);
+    }
+
+    /* ── Left panel ──────────────────────────────────────────────── */
+    .panel {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 12px 8px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color .15s, border-color .15s;
+    }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-content { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .tab-content.active { display: flex; }
+
+    /* Search tab */
+    .search-bar {
+      display: flex;
+      gap: 8px;
+      padding: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .search-bar input, .search-bar select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 8px 10px;
+      font-family: var(--font-ui);
+      font-size: 13px;
+      outline: none;
+    }
+    .search-bar input { flex: 1; }
+    .search-bar input:focus, .search-bar select:focus {
+      border-color: var(--accent);
+    }
+    .search-bar select { width: 72px; }
+
+    .btn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: var(--radius);
+      padding: 8px 14px;
+      font-family: var(--font-ui);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+      white-space: nowrap;
+    }
+    .btn:hover { background: #f5d060; }
+    .btn.secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn.secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .btn.danger { background: var(--danger); color: #fff; }
+    .btn.danger:hover { background: #ff6e5e; }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    .results-grid {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      align-content: start;
+    }
+    .result-card {
+      cursor: pointer;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 2px solid transparent;
+      transition: border-color .15s, transform .1s;
+      background: var(--surface2);
+      position: relative;
+    }
+    .result-card:hover { border-color: var(--accent); transform: scale(1.03); }
+    .result-card img {
+      width: 100%;
+      aspect-ratio: 2/3;
+      object-fit: cover;
+      display: block;
+    }
+    .result-card .no-poster {
+      width: 100%;
+      aspect-ratio: 2/3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+      padding: 8px;
+    }
+    .result-card .card-title {
+      font-size: 10px;
+      padding: 4px 5px;
+      color: var(--muted);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 10px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* Upload tab */
+    .upload-zone {
+      margin: 16px;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(232,193,74,.05);
+      color: var(--accent);
+    }
+    .upload-zone input { display: none; }
+    .upload-zone .icon { font-size: 36px; margin-bottom: 10px; }
+    .upload-zone p { font-size: 13px; }
+    .upload-zone small { font-size: 11px; margin-top: 4px; display: block; }
+
+    /* Saved tab */
+    .saved-grid {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      align-content: start;
+    }
+    .saved-card {
+      cursor: pointer;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 2px solid transparent;
+      transition: border-color .15s;
+      background: var(--surface2);
+    }
+    .saved-card:hover { border-color: var(--accent); }
+    .saved-card img {
+      width: 100%;
+      aspect-ratio: 2/3;
+      object-fit: cover;
+    }
+    .saved-card .card-title {
+      font-size: 10px;
+      padding: 4px 5px;
+      color: var(--muted);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    /* ── Right: editor ───────────────────────────────────────────── */
+    .editor-area {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .editor-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-wrap: wrap;
+    }
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-right: 10px;
+      border-right: 1px solid var(--border);
+    }
+    .toolbar-group:last-child { border-right: none; }
+    .toolbar-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      font-weight: 600;
+    }
+
+    label.tool-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    input[type=text], input[type=number], input[type=range], select.tool-select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 5px 8px;
+      font-family: var(--font-ui);
+      font-size: 12px;
+      outline: none;
+    }
+    input[type=text]:focus, input[type=number]:focus, select.tool-select:focus {
+      border-color: var(--accent);
+    }
+    input[type=number] { width: 56px; }
+    input[type=range] {
+      padding: 0;
+      width: 80px;
+      accent-color: var(--accent);
+    }
+    input[type=color] {
+      width: 30px;
+      height: 28px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: none;
+      padding: 2px;
+      cursor: pointer;
+    }
+
+    .canvas-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(232,193,74,.04) 0%, transparent 50%),
+        repeating-linear-gradient(0deg, transparent, transparent 39px, var(--border) 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 39px, var(--border) 40px);
+      background-color: var(--bg);
+    }
+
+    #editor-canvas {
+      box-shadow: 0 8px 48px rgba(0,0,0,.8);
+    }
+
+    .editor-footer {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .editor-footer input[type=text] { width: 240px; }
+    .save-status {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .save-status.ok  { color: var(--success); }
+    .save-status.err { color: var(--danger); }
+
+    /* ── Badge picker modal ──────────────────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.75);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      width: 480px;
+      max-width: 95vw;
+    }
+    .modal h2 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+      color: var(--accent);
+    }
+    .badge-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .badge-opt {
+      background: var(--surface2);
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 6px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .5px;
+      transition: border-color .15s;
+    }
+    .badge-opt:hover, .badge-opt.selected {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .badge-opt .bicon { font-size: 20px; display: block; margin-bottom: 4px; }
+    .modal-footer { display: flex; gap: 8px; justify-content: flex-end; }
+
+    /* ── Empty state ─────────────────────────────────────────────── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--muted);
+      gap: 12px;
+      text-align: center;
+      padding: 40px;
+    }
+    .empty-state .big-icon { font-size: 56px; opacity: .3; }
+    .empty-state h2 { font-family: var(--font-display); font-size: 26px; letter-spacing: 1px; color: var(--text); opacity: .5; }
+    .empty-state p  { font-size: 13px; max-width: 300px; line-height: 1.6; }
+
+    /* ── Toast ───────────────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 18px;
+      font-size: 13px;
+      color: var(--text);
+      box-shadow: 0 4px 20px rgba(0,0,0,.5);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .25s, transform .25s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.ok  { border-color: var(--success); color: var(--success); }
+    #toast.err { border-color: var(--danger);  color: var(--danger); }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>PosterForge</h1>
+    <p>Search · Edit · Badge · Save</p>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- ── Left panel ── -->
+  <div class="panel">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="search">🔍 Search</button>
+      <button class="tab-btn" data-tab="upload">📁 Upload</button>
+      <button class="tab-btn" data-tab="saved">💾 Saved</button>
+    </div>
+
+    <!-- Search tab -->
+    <div class="tab-content active" id="tab-search">
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Movie or TV title…" />
+        <select id="search-type">
+          <option value="movie">Movie</option>
+          <option value="tv">TV</option>
+        </select>
+        <button class="btn" id="search-btn">Go</button>
+      </div>
+      <div class="results-grid" id="results-grid">
+        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);font-size:13px;">
+          Search for a title above to find poster art.
+        </div>
+      </div>
+      <div class="pagination" id="pagination" style="display:none;">
+        <button class="btn secondary" id="prev-page">← Prev</button>
+        <span id="page-info">Page 1</span>
+        <button class="btn secondary" id="next-page">Next →</button>
+      </div>
+    </div>
+
+    <!-- Upload tab -->
+    <div class="tab-content" id="tab-upload">
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="file-input" accept="image/*" />
+        <div class="icon">🖼️</div>
+        <p>Click or drag an image here</p>
+        <small>JPG · PNG · WebP · GIF</small>
+      </div>
+      <div style="padding: 0 16px; color: var(--muted); font-size: 12px; line-height: 1.7;">
+        <p>Upload your own poster art to use as the base image in the editor.</p>
+        <p style="margin-top:8px;">Tip: standard poster ratio is 2:3 (e.g. 800×1200 px).</p>
+      </div>
+    </div>
+
+    <!-- Saved tab -->
+    <div class="tab-content" id="tab-saved">
+      <div class="saved-grid" id="saved-grid">
+        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);font-size:13px;">
+          No saved posters yet.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Editor area ── -->
+  <div class="editor-area">
+
+    <div class="editor-toolbar">
+      <!-- Text overlay -->
+      <div class="toolbar-group">
+        <span class="toolbar-label">Title</span>
+        <input type="text" id="text-input" placeholder="Add title text…" style="width:160px;" />
+        <input type="number" id="font-size" value="48" min="10" max="200" title="Font size" />
+        <input type="color" id="font-color" value="#ffffff" title="Text color" />
+        <select class="tool-select" id="text-align">
+          <option value="left">Left</option>
+          <option value="center" selected>Center</option>
+          <option value="right">Right</option>
+        </select>
+        <button class="btn secondary" id="add-text-btn">Add Text</button>
+      </div>
+
+      <!-- Badges -->
+      <div class="toolbar-group">
+        <span class="toolbar-label">Badge</span>
+        <button class="btn secondary" id="badge-btn">＋ Badge</button>
+      </div>
+
+      <!-- Adjust -->
+      <div class="toolbar-group">
+        <span class="toolbar-label">Brightness</span>
+        <input type="range" id="brightness" min="-100" max="100" value="0" />
+        <span class="toolbar-label" style="margin-left:4px;">Contrast</span>
+        <input type="range" id="contrast" min="-100" max="100" value="0" />
+      </div>
+
+      <!-- Actions -->
+      <div class="toolbar-group">
+        <button class="btn secondary" id="delete-sel-btn" title="Delete selected object">🗑 Delete</button>
+        <button class="btn secondary" id="clear-btn">Clear All</button>
+      </div>
+    </div>
+
+    <div class="canvas-wrap" id="canvas-wrap">
+      <div class="empty-state" id="empty-state">
+        <div class="big-icon">🎬</div>
+        <h2>No Poster Loaded</h2>
+        <p>Search for a movie or TV show on the left, or upload your own image to start editing.</p>
+      </div>
+      <canvas id="editor-canvas" style="display:none;"></canvas>
+    </div>
+
+    <div class="editor-footer">
+      <span class="toolbar-label">Save as:</span>
+      <input type="text" id="save-filename" placeholder="poster.jpg" />
+      <button class="btn" id="save-btn">💾 Save to Output</button>
+      <button class="btn secondary" id="download-btn">⬇ Download</button>
+      <span class="save-status" id="save-status"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ── Badge modal ── -->
+<div class="modal-overlay" id="badge-modal">
+  <div class="modal">
+    <h2>Add Badge</h2>
+    <div class="badge-grid">
+      <div class="badge-opt" data-badge="4K"><span class="bicon">4K</span>4K UHD</div>
+      <div class="badge-opt" data-badge="HDR"><span class="bicon">HDR</span>HDR</div>
+      <div class="badge-opt" data-badge="HDR10"><span class="bicon">HDR</span>HDR10</div>
+      <div class="badge-opt" data-badge="DV"><span class="bicon">🎞</span>Dolby Vision</div>
+      <div class="badge-opt" data-badge="ATMOS"><span class="bicon">🔊</span>Atmos</div>
+      <div class="badge-opt" data-badge="IMAX"><span class="bicon">📽</span>IMAX</div>
+      <div class="badge-opt" data-badge="NEW"><span class="bicon">🆕</span>New</div>
+      <div class="badge-opt" data-badge="CUSTOM"><span class="bicon">✏️</span>Custom</div>
+    </div>
+    <div id="custom-badge-row" style="display:none; margin-bottom:14px; gap:8px; align-items:center;">
+      <label class="tool-label">Text:</label>
+      <input type="text" id="custom-badge-text" placeholder="e.g. REMUX" style="width:120px;" />
+    </div>
+    <div style="margin-bottom:14px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+      <label class="tool-label">Position:</label>
+      <select class="tool-select" id="badge-position">
+        <option value="top-left">Top Left</option>
+        <option value="top-right" selected>Top Right</option>
+        <option value="bottom-left">Bottom Left</option>
+        <option value="bottom-right">Bottom Right</option>
+      </select>
+      <label class="tool-label">Style:</label>
+      <select class="tool-select" id="badge-style">
+        <option value="filled">Filled</option>
+        <option value="outline">Outline</option>
+        <option value="pill">Pill</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn secondary" id="badge-cancel">Cancel</button>
+      <button class="btn" id="badge-add">Add Badge</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let fabricCanvas = null;
+let currentPage  = 1;
+let totalPages   = 1;
+let currentQuery = "";
+let currentType  = "movie";
+let selectedBadge = null;
+
+const API = "";   // same origin — backend serves frontend
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+    if (btn.dataset.tab === "saved") loadSaved();
+  });
+});
+
+// ── Search ────────────────────────────────────────────────────────────────────
+async function doSearch(page = 1) {
+  const q = document.getElementById("search-input").value.trim();
+  if (!q) return;
+  currentQuery = q;
+  currentType  = document.getElementById("search-type").value;
+  currentPage  = page;
+
+  const grid = document.getElementById("results-grid");
+  grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">Searching…</div>`;
+
+  try {
+    const r = await fetch(`${API}/api/search?q=${encodeURIComponent(q)}&type=${currentType}&page=${page}`);
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+
+    totalPages = data.total_pages;
+    renderResults(data.results);
+    updatePagination();
+  } catch(e) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--danger);">Error: ${e.message}</div>`;
+  }
+}
+
+function renderResults(results) {
+  const grid = document.getElementById("results-grid");
+  if (!results.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">No results found.</div>`;
+    document.getElementById("pagination").style.display = "none";
+    return;
+  }
+  grid.innerHTML = results.map(r => `
+    <div class="result-card" data-poster="${r.poster_url || ""}" data-title="${escHtml(r.title)} (${r.year})">
+      ${r.poster_url
+        ? `<img src="${API}/api/proxy-image?url=${encodeURIComponent(r.poster_url)}" alt="${escHtml(r.title)}" loading="lazy" />`
+        : `<div class="no-poster">No Poster</div>`
+      }
+      <div class="card-title">${escHtml(r.title)} ${r.year ? `<span style="opacity:.5">${r.year}</span>` : ""}</div>
+    </div>
+  `).join("");
+
+  grid.querySelectorAll(".result-card[data-poster]").forEach(card => {
+    card.addEventListener("click", () => {
+      const url = card.dataset.poster;
+      const title = card.dataset.title;
+      if (!url) { toast("No poster available for this title.", "err"); return; }
+      loadImageFromUrl(`${API}/api/proxy-image?url=${encodeURIComponent(url)}`, title);
+    });
+  });
+}
+
+function updatePagination() {
+  const pag = document.getElementById("pagination");
+  pag.style.display = totalPages > 1 ? "flex" : "none";
+  document.getElementById("page-info").textContent = `Page ${currentPage} / ${totalPages}`;
+  document.getElementById("prev-page").disabled = currentPage <= 1;
+  document.getElementById("next-page").disabled = currentPage >= totalPages;
+}
+
+document.getElementById("search-btn").addEventListener("click", () => doSearch(1));
+document.getElementById("search-input").addEventListener("keydown", e => { if (e.key === "Enter") doSearch(1); });
+document.getElementById("prev-page").addEventListener("click", () => doSearch(currentPage - 1));
+document.getElementById("next-page").addEventListener("click", () => doSearch(currentPage + 1));
+
+// ── Upload ────────────────────────────────────────────────────────────────────
+const uploadZone = document.getElementById("upload-zone");
+const fileInput  = document.getElementById("file-input");
+
+uploadZone.addEventListener("click", () => fileInput.click());
+uploadZone.addEventListener("dragover", e => { e.preventDefault(); uploadZone.classList.add("drag-over"); });
+uploadZone.addEventListener("dragleave", () => uploadZone.classList.remove("drag-over"));
+uploadZone.addEventListener("drop", e => {
+  e.preventDefault();
+  uploadZone.classList.remove("drag-over");
+  const file = e.dataTransfer.files[0];
+  if (file) loadImageFile(file);
+});
+fileInput.addEventListener("change", () => { if (fileInput.files[0]) loadImageFile(fileInput.files[0]); });
+
+function loadImageFile(file) {
+  const url = URL.createObjectURL(file);
+  loadImageFromUrl(url, file.name.replace(/\.[^.]+$/, ""));
+}
+
+// ── Fabric canvas setup ───────────────────────────────────────────────────────
+function initCanvas(width, height) {
+  if (fabricCanvas) {
+    fabricCanvas.dispose();
+    fabricCanvas = null;
+  }
+
+  const canvasEl = document.getElementById("editor-canvas");
+  canvasEl.width  = width;
+  canvasEl.height = height;
+  canvasEl.style.display = "block";
+  document.getElementById("empty-state").style.display = "none";
+
+  fabricCanvas = new fabric.Canvas("editor-canvas", {
+    width, height,
+    selection: true,
+  });
+
+  scaleCanvas();
+  window.addEventListener("resize", scaleCanvas);
+}
+
+function scaleCanvas() {
+  if (!fabricCanvas) return;
+  const wrap  = document.getElementById("canvas-wrap");
+  const maxW  = wrap.clientWidth  - 40;
+  const maxH  = wrap.clientHeight - 40;
+  const scale = Math.min(maxW / fabricCanvas.width, maxH / fabricCanvas.height, 1);
+  const upperCanvas = document.getElementById("editor-canvas").parentElement;
+  upperCanvas.style.transform = `scale(${scale})`;
+  upperCanvas.style.transformOrigin = "top left";
+  upperCanvas.style.width  = fabricCanvas.width + "px";
+  upperCanvas.style.height = fabricCanvas.height + "px";
+}
+
+function loadImageFromUrl(url, title) {
+  fabric.Image.fromURL(url, img => {
+    const W = 800, H = 1200;
+    initCanvas(W, H);
+
+    const scaleX = W / img.width;
+    const scaleY = H / img.height;
+    const scale  = Math.max(scaleX, scaleY);
+    img.set({
+      left: W / 2, top: H / 2,
+      originX: "center", originY: "center",
+      scaleX: scale, scaleY: scale,
+      selectable: false, evented: false,
+      name: "__bg__",
+    });
+
+    fabricCanvas.add(img);
+    fabricCanvas.sendToBack(img);
+    fabricCanvas.renderAll();
+
+    const safeName = (title || "poster").replace(/[^a-zA-Z0-9_\-\s]/g, "").trim().replace(/\s+/g, "_");
+    document.getElementById("save-filename").value = safeName + ".jpg";
+
+    toast(`Poster loaded — add badges or text, then save.`, "ok");
+  }, { crossOrigin: "anonymous" });
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────────
+function applyFilters() {
+  if (!fabricCanvas) return;
+  const bg = fabricCanvas.getObjects().find(o => o.name === "__bg__");
+  if (!bg) return;
+  const b = parseInt(document.getElementById("brightness").value) / 100;
+  const c = parseInt(document.getElementById("contrast").value) / 100;
+  bg.filters = [
+    new fabric.Image.filters.Brightness({ brightness: b }),
+    new fabric.Image.filters.Contrast({ contrast: c }),
+  ];
+  bg.applyFilters();
+  fabricCanvas.renderAll();
+}
+document.getElementById("brightness").addEventListener("input", applyFilters);
+document.getElementById("contrast").addEventListener("input", applyFilters);
+
+// ── Text overlay ──────────────────────────────────────────────────────────────
+document.getElementById("add-text-btn").addEventListener("click", () => {
+  if (!fabricCanvas) { toast("Load a poster first.", "err"); return; }
+  const text  = document.getElementById("text-input").value || "Title";
+  const size  = parseInt(document.getElementById("font-size").value) || 48;
+  const color = document.getElementById("font-color").value;
+  const align = document.getElementById("text-align").value;
+
+  const t = new fabric.Text(text, {
+    left: 400, top: 1100,
+    originX: "center", originY: "bottom",
+    fontFamily: "Arial Black, sans-serif",
+    fontSize: size,
+    fill: color,
+    textAlign: align,
+    shadow: "rgba(0,0,0,0.8) 2px 2px 8px",
+    selectable: true,
+  });
+  fabricCanvas.add(t);
+  fabricCanvas.setActiveObject(t);
+  fabricCanvas.renderAll();
+});
+
+// ── Badge modal ───────────────────────────────────────────────────────────────
+document.getElementById("badge-btn").addEventListener("click", () => {
+  if (!fabricCanvas) { toast("Load a poster first.", "err"); return; }
+  document.getElementById("badge-modal").classList.add("open");
+});
+document.getElementById("badge-cancel").addEventListener("click", () => {
+  document.getElementById("badge-modal").classList.remove("open");
+  selectedBadge = null;
+  document.querySelectorAll(".badge-opt").forEach(b => b.classList.remove("selected"));
+});
+
+document.querySelectorAll(".badge-opt").forEach(opt => {
+  opt.addEventListener("click", () => {
+    document.querySelectorAll(".badge-opt").forEach(b => b.classList.remove("selected"));
+    opt.classList.add("selected");
+    selectedBadge = opt.dataset.badge;
+    const customRow = document.getElementById("custom-badge-row");
+    customRow.style.display = selectedBadge === "CUSTOM" ? "flex" : "none";
+  });
+});
+
+document.getElementById("badge-add").addEventListener("click", () => {
+  if (!selectedBadge) { toast("Pick a badge first.", "err"); return; }
+
+  let label = selectedBadge;
+  if (selectedBadge === "CUSTOM") {
+    label = document.getElementById("custom-badge-text").value.trim().toUpperCase() || "BADGE";
+  }
+  const position = document.getElementById("badge-position").value;
+  const style    = document.getElementById("badge-style").value;
+
+  addBadge(label, position, style);
+
+  document.getElementById("badge-modal").classList.remove("open");
+  selectedBadge = null;
+  document.querySelectorAll(".badge-opt").forEach(b => b.classList.remove("selected"));
+  document.getElementById("custom-badge-row").style.display = "none";
+});
+
+function addBadge(label, position, style) {
+  const PAD = 20;
+  const W   = fabricCanvas.width;
+
+  const text = new fabric.Text(label, {
+    fontSize: 28,
+    fontFamily: "Arial Black, Impact, sans-serif",
+    fontWeight: "bold",
+    fill: "#fff",
+    originX: "center", originY: "center",
+  });
+
+  const bw = text.width  + 20;
+  const bh = text.height + 10;
+
+  let bgColor = "#e8c14a";
+  let bgOpacity = 1;
+  let strokeColor = "#e8c14a";
+  let strokeWidth = 0;
+  let rx = style === "pill" ? bh / 2 : 6;
+
+  if (label === "HDR" || label === "HDR10") bgColor = "#ff6b35";
+  if (label === "DV")    bgColor = "#3a6fff";
+  if (label === "ATMOS") bgColor = "#333";
+  if (label === "IMAX")  bgColor = "#e8c14a";
+  if (label === "NEW")   bgColor = "#4ae8a0";
+
+  if (style === "outline") {
+    bgOpacity   = 0;
+    strokeColor = bgColor;
+    strokeWidth = 2;
+  }
+
+  const rect = new fabric.Rect({
+    width: bw, height: bh,
+    rx, ry: rx,
+    fill: bgColor,
+    opacity: bgOpacity,
+    originX: "center", originY: "center",
+    stroke: strokeColor,
+    strokeWidth,
+  });
+  text.set({ fill: style === "outline" ? strokeColor : (label === "4K" ? "#000" : "#fff") });
+
+  let left, top;
+  if (position === "top-left")     { left = PAD + bw / 2; top = PAD + bh / 2; }
+  else if (position === "top-right")    { left = W - PAD - bw / 2; top = PAD + bh / 2; }
+  else if (position === "bottom-left")  { left = PAD + bw / 2; top = fabricCanvas.height - PAD - bh / 2; }
+  else                              { left = W - PAD - bw / 2; top = fabricCanvas.height - PAD - bh / 2; }
+
+  const group = new fabric.Group([rect, text], {
+    left, top,
+    originX: "center", originY: "center",
+    selectable: true,
+  });
+
+  fabricCanvas.add(group);
+  fabricCanvas.setActiveObject(group);
+  fabricCanvas.renderAll();
+}
+
+// ── Delete / clear ────────────────────────────────────────────────────────────
+document.getElementById("delete-sel-btn").addEventListener("click", () => {
+  if (!fabricCanvas) return;
+  const active = fabricCanvas.getActiveObject();
+  if (active && active.name !== "__bg__") {
+    fabricCanvas.remove(active);
+    fabricCanvas.renderAll();
+  }
+});
+
+document.getElementById("clear-btn").addEventListener("click", () => {
+  if (!fabricCanvas) return;
+  const bg = fabricCanvas.getObjects().find(o => o.name === "__bg__");
+  fabricCanvas.clear();
+  if (bg) { fabricCanvas.add(bg); fabricCanvas.sendToBack(bg); }
+  fabricCanvas.renderAll();
+});
+
+// ── Save ──────────────────────────────────────────────────────────────────────
+document.getElementById("save-btn").addEventListener("click", async () => {
+  if (!fabricCanvas) { toast("Nothing to save.", "err"); return; }
+  const filename = document.getElementById("save-filename").value.trim() || "poster.jpg";
+  const dataURL  = fabricCanvas.toDataURL({ format: "jpeg", quality: 0.95 });
+  const status   = document.getElementById("save-status");
+  status.textContent = "Saving…";
+  status.className   = "save-status";
+
+  try {
+    const r = await fetch(`${API}/api/save`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filename, image: dataURL }),
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    status.textContent = `✓ Saved as ${data.saved}`;
+    status.className   = "save-status ok";
+    toast(`Saved: ${data.saved}`, "ok");
+  } catch (e) {
+    status.textContent = `Error: ${e.message}`;
+    status.className   = "save-status err";
+    toast(e.message, "err");
+  }
+});
+
+document.getElementById("download-btn").addEventListener("click", () => {
+  if (!fabricCanvas) { toast("Nothing to download.", "err"); return; }
+  const dataURL  = fabricCanvas.toDataURL({ format: "jpeg", quality: 0.95 });
+  const filename = document.getElementById("save-filename").value.trim() || "poster.jpg";
+  const a = document.createElement("a");
+  a.href = dataURL;
+  a.download = filename;
+  a.click();
+});
+
+// ── Saved gallery ─────────────────────────────────────────────────────────────
+async function loadSaved() {
+  const grid = document.getElementById("saved-grid");
+  grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--muted);">Loading…</div>`;
+  try {
+    const r = await fetch(`${API}/api/saved`);
+    const data = await r.json();
+    if (!data.files.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">No saved posters yet.</div>`;
+      return;
+    }
+    grid.innerHTML = data.files.map(f => `
+      <div class="saved-card" data-file="${encodeURIComponent(f)}">
+        <img src="${API}/api/saved/${encodeURIComponent(f)}" alt="${escHtml(f)}" loading="lazy" />
+        <div class="card-title">${escHtml(f)}</div>
+      </div>
+    `).join("");
+    grid.querySelectorAll(".saved-card").forEach(card => {
+      card.addEventListener("click", () => {
+        loadImageFromUrl(`${API}/api/saved/${card.dataset.file}`, card.dataset.file.replace(/\.[^.]+$/, ""));
+      });
+    });
+  } catch(e) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--danger);">Error loading saved files.</div>`;
+  }
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+</script>
+</body>
+</html>
